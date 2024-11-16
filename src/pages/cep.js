@@ -1,45 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Layout from "../components/Layout";
 
-export default function CepPage(){
+export default function CepPage() {
   const [cep, setCep] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
-  // Função para consultar o CEP na API ViaCEP
-  const consultarCEP = async (event) => {
-    event.preventDefault();
-    const cepFormatted = cep.replace(/\D/g, ""); // Remove caracteres não numéricos
+  useEffect(() => {
+    if (cep.length === 8) {
+      const consultarCEP = async () => {
+        const cepFormatted = cep.replace(/\D/g, "");
 
+        if (cepFormatted.length !== 8) {
+          setError("Digite um CEP válido!");
+          setResult(null);
+          return;
+        }
 
-    if (cepFormatted.length !== 8) {
-      setError("Digite um CEP válido!");
-      setResult(null);
-      return;
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${cepFormatted}/json/`);
+          const data = await response.json();
+
+          if (data.erro) {
+            setError("CEP não encontrado!");
+            setResult(null);
+          } else {
+            setResult(data);
+            setError(""); 
+          }
+        } catch (err) {
+          setError("Ocorreu um erro ao consultar o CEP.");
+          setResult(null);
+        }
+      };
+
+      consultarCEP();
     }
-
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepFormatted}/json/`);
-      const data = await response.json();
-
-      if (data.erro) {
-        setError("CEP não encontrado!");
-        setResult(null);
-      } else {
-        setResult(data);
-        setError(""); // Limpa o erro
-      }
-    } catch (err) {
-      setError("Ocorreu um erro ao consultar o CEP.");
-      setResult(null);
-    }
-  };
+  }, [cep]); 
 
   return (
     <Layout>
       <div className="cep-page">
         <h1>Consultar CEP</h1>
-        <form onSubmit={consultarCEP}>
+        <form onSubmit={(e) => e.preventDefault()}> {/* Evita o reload da página */}
           <input
             type="text"
             placeholder="Digite o CEP"
@@ -64,4 +67,4 @@ export default function CepPage(){
       </div>
     </Layout>
   );
-};
+}
